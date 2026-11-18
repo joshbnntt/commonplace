@@ -21,6 +21,10 @@ Do a Settings, Download backup before deploying, as a precaution.
 3. Bump `VERSION` in that app's `sw.js` (`cp-4` for commonplace, `zk-7` for notes).
 Commonplace updates apply silently. The notebook shows an "Update available" prompt.
 
+## Deploying on Vercel instead of Netlify
+`vercel.json` carries the same security policy and cache rules as `_headers`. Import the repo in Vercel with no framework, no build command, and the repo root as the output directory.
+Your notes live in the browser for ONE site address. A Vercel address is a new origin, so it starts empty: download a backup from each app (commonplace Settings, notebook Settings) and import it on the new address. Both apps must stay on the same address so the notebook can read commonplace entries.
+
 ## Notes
 - "Write a note about this" on a commonplace entry opens a new notebook draft with that quote already attached as its source.
 - Commonplace entries show "Cited in" links to the Zettelkasten notes that use them (read-only, live).
