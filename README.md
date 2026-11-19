@@ -18,7 +18,7 @@ Do a Settings, Download backup before deploying, as a precaution.
 ## Updating
 1. Change files, redeploy.
 2. If you add, rename, or remove files, update the `SHELL` list in that app's `sw.js`.
-3. Bump `VERSION` in that app's `sw.js` (`cp-4` for commonplace, `zk-7` for notes).
+3. Bump `VERSION` in that app's `sw.js` (`cp-5` for commonplace, `zk-8` for notes).
 Commonplace updates apply silently. The notebook shows an "Update available" prompt.
 
 ## Deploying on Vercel instead of Netlify

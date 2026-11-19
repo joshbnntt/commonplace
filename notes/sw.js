@@ -1,7 +1,7 @@
 /* Zettelkasten service worker.
    Precaches the app shell and serves it offline. Bump VERSION when you
    add or rename files so the new worker installs and the update prompt appears. */
-const VERSION = 'zk-7';
+const VERSION = 'zk-8';
 const SHELL = [
   './', 'index.html', 'style.css', 'app.js', 'fflate.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
