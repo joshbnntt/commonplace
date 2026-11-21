@@ -76,6 +76,29 @@ function saveHead(){const i=$('#hd');if(!S.ed||!i)return;const p=S.v.p||lastPage
 const back=()=>history.length>1&&nav>0?history.back():go({n:'page'});
 const svg=p=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const I={s:svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),b:svg('<path d="M15 5l-7 7 7 7"/>'),e:svg('<path d="M4 20l1-4L16 5l3 3L8 19z"/>'),p:svg('<path d="M12 5v14M5 12h14"/>')};
+/* ---- markdown (small, safe subset: everything is escaped first) ---- */
+const mdi=s=>{const st=[],k=h=>'\u0000'+(st.push(h)-1)+'\u0000';
+let h=esc(String(s??'').replace(/\u0000/g,''))
+.replace(/`([^`\n]+)`/g,(_,c)=>k('<code>'+c+'</code>'))
+.replace(/\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,(_,t,u)=>k(`<a class="mdl" href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>`))
+.replace(/(^|[\s(])(https?:\/\/[^\s<]*[^\s<.,;:!?)\]'])/g,(_,p,u)=>p+k(`<a class="mdl" href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`))
+.replace(/\*\*(\S(?:[\s\S]*?\S)?)\*\*/g,'<strong>$1</strong>').replace(/(^|\W)__(\S(?:[\s\S]*?\S)?)__(?!\w)/g,'$1<strong>$2</strong>')
+.replace(/\*(\S(?:[^*]*?\S)?)\*/g,'<em>$1</em>').replace(/(^|\W)_(\S(?:[^_]*?\S)?)_(?!\w)/g,'$1<em>$2</em>')
+.replace(/~~(\S(?:[\s\S]*?\S)?)~~/g,'<del>$1</del>');
+return h.replace(/\u0000(\d+)\u0000/g,(_,i)=>st[i])};
+const LI=/^\s*([-*+]|\d+[.)])\s+(.*)$/,BLK=/^(```|#{1,6}\s|>|\s*([-*+]|\d+[.)])\s)/,HR=/^\s*([-*_])(\s*\1){2,}\s*$/;
+const md=s=>{const L=String(s??'').replace(/\r\n?/g,'\n').split('\n'),o=[];let i=0,m;
+while(i<L.length){const l=L[i];
+if(!l.trim()){i++;continue}
+if(/^```/.test(l)){const b=[];i++;while(i<L.length&&!/^```/.test(L[i]))b.push(L[i++]);i++;o.push('<pre><code>'+esc(b.join('\n'))+'</code></pre>');continue}
+if(m=l.match(/^(#{1,6})\s+(.*)$/)){const n=Math.min(m[1].length+2,6);o.push(`<h${n}>${mdi(m[2])}</h${n}>`);i++;continue}
+if(HR.test(l)){o.push('<hr>');i++;continue}
+if(/^>/.test(l)){const b=[];while(i<L.length&&/^>/.test(L[i]))b.push(L[i++].replace(/^> ?/,''));o.push('<blockquote>'+md(b.join('\n'))+'</blockquote>');continue}
+if(m=l.match(LI)){const ol=/\d/.test(m[1]),start=ol?parseInt(m[1]):1,it=[];
+while(i<L.length&&(m=L[i].match(LI))&&/\d/.test(m[1])==ol){it.push(m[2]);i++;while(i<L.length&&/^\s+\S/.test(L[i])&&!LI.test(L[i]))it[it.length-1]+='\n'+L[i++].trim()}
+const lis=it.map(x=>'<li>'+mdi(x).replace(/\n/g,'<br>')+'</li>').join('');o.push(ol?`<ol${start>1?` start="${start}"`:''}>${lis}</ol>`:`<ul>${lis}</ul>`);continue}
+const b=[l];i++;while(i<L.length&&L[i].trim()&&!BLK.test(L[i])&&!HR.test(L[i]))b.push(L[i++]);o.push('<p>'+mdi(b.join('\n')).replace(/\n/g,'<br>')+'</p>')}
+return o.join('')};
 const hl=(s,t)=>{if(!t||!t.length)return esc(s);const re=new RegExp('('+t.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');return String(s).split(re).map((p,i)=>i%2?'<mark>'+esc(p)+'</mark>':esc(p)).join('')};
 /* notes in the Zettelkasten (same site) that cite each entry, read-only */
 let CITED={};
@@ -100,23 +123,30 @@ return shell(`<header class="top"><div class="serif">Commonplace</div><button cl
 <div class="strip"><span class="serif">p. ${p}</span>${S.ed?`<input id="hd" class="in" style="flex:1;margin:0 12px;height:36px" aria-label="Page heading" value="${esc(S.T[p]||'')}" placeholder="${esc(autoTopic(p)||'Heading')}">`:`<button class="lnk lbl" style="flex:1;text-align:left;margin-left:12px;min-height:44px" data-a="edithead" aria-label="Edit page heading">${esc(topic(p))||'Add a heading'}</button>`}${E.length||ps.length>1?nav:''}</div>
 ${E.length?E.map(e=>row(e)).join(''):`<div class="empty"><p class="serif" style="font-size:24px">Your first page is empty</p><p class="mut">Capture a quote, or bring your notes in from Markdown files.</p><button class="btn" data-a="new">New entry</button> <button class="btn ghost" data-a="sample">Load samples</button> <button class="btn ghost" data-a="settings">Import</button></div>`}`)},
 entry(){const e=S.entries.find(x=>x.id==S.v.id);if(!e)return V.page();const P=sorted().filter(x=>x.page==e.page),i=P.indexOf(e);
-const r=(l,v)=>v?`<div><dt>${l}</dt><dd>${v}</dd></div>`:'';
-return shell(`<header class="top"><button class="lnk big" data-a="page" data-n="${e.page}" style="display:flex;align-items:center;gap:6px;color:var(--ink)">${I.b}p. ${e.page}</button><span style="flex:1"></span><button class="ic" data-a="edit" data-id="${e.id}" aria-label="Edit entry">${I.e}</button></header>
-<div class="big">“${esc(e.quote)}”</div><dl>${r('Tag',e.tags.map(t=>`<span class="tag">${esc(tname(t))}</span>`).join(', '))}${r('Author',esc(e.author))}${r('Source',`<i>${esc(e.source)}</i>`.replace('<i></i>',''))}${r('Locator',esc(e.locator))}${r('Date',esc(fdate(e.date)))}${r('See also',e.see.map(n=>`<button class="lnk" data-a="page" data-n="${n}">p. ${n} →</button>`).join(' '))}${r('Cited in',(CITED[e.id]||[]).length?`<div class="cites">${citeLinks(e,20)}</div>`:'')}</dl>
-<div style="margin-top:20px"><a class="btn" href="notes/#new-${e.id}" style="display:inline-flex;align-items:center;text-decoration:none">Write a note about this</a></div>
-${e.note?`<p class="mut" style="white-space:pre-wrap">→ ${esc(e.note)}</p>`:''}
-<div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0"><button class="lnk big" data-a="entry" data-id="${(P[i-1]||{}).id}" ${i>0?'':'disabled'}>‹ Previous</button><span class="mut" style="font-size:12px">${i+1} of ${P.length} on this page</span><button class="lnk big" data-a="entry" data-id="${(P[i+1]||{}).id}" ${i<P.length-1?'':'disabled'}>Next ›</button></div>
-<div class="chips" style="align-items:center;margin-bottom:12px"><label class="lbl" for="mv">Move to page</label><input id="mv" class="in" type="number" min="1" style="width:90px" value="${e.page}"><button class="btn ghost" data-a="move" data-id="${e.id}">Move</button></div>
-<div class="chips"><button class="btn ghost" data-a="copyq" data-id="${e.id}">Copy quote</button><button class="btn ghost" data-a="copymd" data-id="${e.id}">Copy as Markdown</button><button class="btn ghost" data-a="del" data-id="${e.id}">${S.del==e.id?'Tap again to delete':'Delete'}</button></div>`,0)},
+const r=(l,v)=>v?`<div><dt>${l}</dt><dd>${v}</dd></div>`:'',url=/^https?:\/\/\S+$/.test(e.locator);
+const by=[e.author&&`<a href="#" class="ent-au" data-a="list" data-k="authors" data-key="${esc(e.author)}">${esc(e.author)}</a>`,e.source&&`<a href="#" data-a="list" data-k="sources" data-key="${esc(e.source)}"><cite>${esc(e.source)}</cite></a>`,e.locator&&!url&&`<span class="mut">${esc(e.locator)}</span>`].filter(Boolean).join(', ');
+return shell(`<header class="top"><button class="lnk big" data-a="page" data-n="${e.page}" style="display:flex;align-items:center;gap:6px;color:var(--ink)">${I.b}p. ${e.page}${topic(e.page)?`<span class="mut" style="margin-left:4px">· ${esc(topic(e.page))}</span>`:''}</button><span style="flex:1"></span><button class="ic" data-a="edit" data-id="${e.id}" aria-label="Edit entry">${I.e}</button></header>
+<article class="ent">
+<div class="ent-eye">${e.tags.map(t=>`<a href="#" class="ent-tag" data-a="list" data-k="tags" data-key="${esc(t)}">${esc(tname(t))}</a>`).join('')}<span class="lbl">${esc(fdate(e.date))}</span></div>
+<blockquote class="ent-q md">${md(e.quote)}</blockquote>
+${by?`<p class="ent-by"><span aria-hidden="true">— </span>${by}</p>`:''}
+${e.note?`<section class="ent-note"><h2 class="lbl">Note</h2><div class="md">${md(e.note)}</div></section>`:''}
+<div class="ent-cta"><a class="btn" href="notes/#new-${e.id}" style="display:inline-flex;align-items:center;text-decoration:none">Write a note about this</a></div>
+<dl class="ent-dl">${url?r('Link',`<a class="mdl" href="${esc(e.locator)}" target="_blank" rel="noopener noreferrer">${esc(e.locator.replace(/^https?:\/\/(www\.)?/,''))}</a>`):''}${r('See also',e.see.map(n=>`<button class="lnk" data-a="page" data-n="${n}">p. ${n} →</button>`).join(' '))}${r('Cited in',(CITED[e.id]||[]).length?`<div class="cites">${citeLinks(e,20)}</div>`:'')}</dl>
+<nav class="ent-nav" aria-label="Entries on this page"><button class="lnk big" data-a="entry" data-id="${(P[i-1]||{}).id}" ${i>0?'':'disabled'}>‹ Previous</button><span class="mut" style="font-size:12px">${i+1} of ${P.length} on this page</span><button class="lnk big" data-a="entry" data-id="${(P[i+1]||{}).id}" ${i<P.length-1?'':'disabled'}>Next ›</button></nav>
+<footer class="ent-tools">
+<div class="chips" style="align-items:center"><label class="lbl" for="mv">Move to page</label><input id="mv" class="in" type="number" min="1" style="width:90px" value="${e.page}"><button class="btn ghost" data-a="move" data-id="${e.id}">Move</button></div>
+<div class="chips"><button class="btn ghost" data-a="copyq" data-id="${e.id}">Copy quote</button><button class="btn ghost" data-a="copymd" data-id="${e.id}">Copy as Markdown</button><button class="btn ghost" data-a="del" data-id="${e.id}">${S.del==e.id?'Tap again to delete':'Delete'}</button></div>
+</footer></article>`,0)},
 form(){const f=S.f,tags=[...new Set([...groups('tags').map(g=>g.k),...f.tags])],e=f.id?null:slot(+f.page||0);
 const inp=(k,l,ph='',t='text',list='')=>`<div class="fld"><label class="lbl" for="f-${k}">${l}</label><input class="in" id="f-${k}" data-f="${k}" type="${t}" value="${esc(f[k])}" placeholder="${ph}" ${list?`list="${list}"`:''}></div>`;
 return`<main class="main" style="max-width:640px;margin:0 auto;width:100%"><header class="top"><button class="lnk big" data-a="cancel" style="color:var(--muted)">Cancel</button><div class="serif" style="font-size:20px;text-align:center">${f.id?'Edit entry':'New entry'}</div><button class="btn" data-a="save" ${f.quote.trim()?'':'disabled style="opacity:.4"'}>Save</button></header>
-<div class="fld"><label class="lbl" for="f-quote">Quote</label><textarea class="qin" id="f-quote" data-f="quote">${esc(f.quote)}</textarea></div>
+<div class="fld"><label class="lbl" for="f-quote">Quote <span class="mdhint">Markdown</span></label><textarea class="qin" id="f-quote" data-f="quote">${esc(f.quote)}</textarea></div>
 <div class="fld"><span class="lbl">Tag</span><div class="chips">${tags.map(t=>`<button class="chip" data-a="tag" data-t="${esc(t)}" aria-pressed="${f.tags.includes(t)}">${esc(tname(t))}</button>`).join('')}${f.addTag?`<input class="in" id="tnew" aria-label="New tag" style="width:140px" placeholder="New tag" enterkeyhint="done" autocomplete="off" autocapitalize="none"><button class="chip" data-a="addtag" style="min-height:44px">Add</button>`:`<button class="chip" data-a="newtag" style="border-style:dashed;color:var(--muted)">+ New</button>`}</div></div>
 ${inp('author','Author','','text','dl-a')}${inp('source','Source','','text','dl-s')}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">${inp('locator','Page or URL','p. 91')}${inp('date','Date','','date')}</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">${inp('see','See also','12, 31')}${inp('page','Notebook page','auto','number')}</div>
-${f.showNote||f.note?`<div class="fld"><label class="lbl" for="f-note">Note</label><textarea class="in" id="f-note" data-f="note" style="height:90px">${esc(f.note)}</textarea></div>`:`<button class="lnk big" data-a="addnote">+ Add a note</button>`}
+${f.showNote||f.note?`<div class="fld"><label class="lbl" for="f-note">Note <span class="mdhint">Markdown</span></label><textarea class="in" id="f-note" data-f="note" style="height:90px">${esc(f.note)}</textarea></div>`:`<button class="lnk big" data-a="addnote">+ Add a note</button>`}
 <datalist id="dl-a">${groups('authors').map(g=>`<option value="${esc(g.n)}">`).join('')}</datalist><datalist id="dl-s">${groups('sources').map(g=>`<option value="${esc(g.n)}">`).join('')}</datalist>
 <p class="mut" style="font-size:12px">${e?`Will be added to p. ${e.page} · entry ${e.order} of ${S.entries.filter(x=>x.page==e.page).length+1}`:'Editing an existing entry'}</p></main>`},
 index(){const k=S.v.k;if(k=='pages')return V.pagesIndex();const G=groups(k);let pl='';
