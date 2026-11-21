@@ -84,7 +84,7 @@ let h=esc(String(s??'').replace(/\u0000/g,''))
 .replace(/(^|[\s(])(https?:\/\/[^\s<]*[^\s<.,;:!?)\]'])/g,(_,p,u)=>p+A(u,u))
 .replace(/\*\*(\S(?:[\s\S]*?\S)?)\*\*/g,'<strong>$1</strong>').replace(/(^|\W)__(\S(?:[\s\S]*?\S)?)__(?!\w)/g,'$1<strong>$2</strong>')
 .replace(/\*(\S(?:[^*]*?\S)?)\*/g,'<em>$1</em>').replace(/(^|\W)_(\S(?:[^_]*?\S)?)_(?!\w)/g,'$1<em>$2</em>')
-.replace(/~~(\S(?:[\s\S]*?\S)?)~~/g,'<del>$1</del>');
+.replace(/~~(\S(?:[\s\S]*?\S)?)~~/g,'<del>$1</del>').replace(/==(\S(?:[\s\S]*?\S)?)==/g,'<mark class="hi">$1</mark>');
 return h.replace(/\u0000(\d+)\u0000/g,(_,i)=>st[i])};
 const LI=/^\s*([-*+]|\d+[.)])\s+(.*)$/,BLK=/^(```|#{1,6}\s|>|\s*([-*+]|\d+[.)])\s)/,HR=/^\s*([-*_])(\s*\1){2,}\s*$/;
 const md=s=>{const L=String(s??'').replace(/\r\n?/g,'\n').split('\n'),o=[];let i=0,m;

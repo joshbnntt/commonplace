@@ -4,9 +4,9 @@
 @font-face{font-family:Newsreader;font-style:normal;font-weight:400;font-display:swap;src:url(fonts/newsreader-latin-400-normal.woff2) format('woff2')}
 @font-face{font-family:Newsreader;font-style:normal;font-weight:500;font-display:swap;src:url(fonts/newsreader-latin-500-normal.woff2) format('woff2')}
 @font-face{font-family:Newsreader;font-style:italic;font-weight:400;font-display:swap;src:url(fonts/newsreader-latin-400-italic.woff2) format('woff2')}
-:root{--paper:#F6F6F3;--ink:#1B1C1E;--muted:#5F5F5A;--rule:#E3E1DA;--wash:#ECEAE3;--accent:#2F5D62;--mark:#D6E6E3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#161715;--ink:#ECEAE3;--muted:#A3A39C;--rule:#2C2D2A;--wash:#22231F;--accent:#7FB3B5;--mark:#24403F}}
-:root[data-theme=dark]{--paper:#161715;--ink:#ECEAE3;--muted:#A3A39C;--rule:#2C2D2A;--wash:#22231F;--accent:#7FB3B5;--mark:#24403F}
+:root{--hi:#F7E3A1;--paper:#F6F6F3;--ink:#1B1C1E;--muted:#5F5F5A;--rule:#E3E1DA;--wash:#ECEAE3;--accent:#2F5D62;--mark:#D6E6E3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--hi:#5A4A1C;--paper:#161715;--ink:#ECEAE3;--muted:#A3A39C;--rule:#2C2D2A;--wash:#22231F;--accent:#7FB3B5;--mark:#24403F}}
+:root[data-theme=dark]{--hi:#5A4A1C;--paper:#161715;--ink:#ECEAE3;--muted:#A3A39C;--rule:#2C2D2A;--wash:#22231F;--accent:#7FB3B5;--mark:#24403F}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Inter,system-ui,sans-serif}
@@ -104,3 +104,5 @@ dl{margin:0;border-top:1px solid var(--ink)}dl div{display:grid;grid-template-co
 .q code,.note code{font:.85em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--wash);padding:.05em .3em;border-radius:4px}
 .q .mdl,.note .mdl{text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
 @media(min-width:900px){.crumb-p{font-size:24px}.crumb-t{font-size:14px}}
+mark.hi{background:var(--hi);border-radius:3px;padding:0 .12em;margin:0 -.04em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hi mark{background:var(--mark)}
