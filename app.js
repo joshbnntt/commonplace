@@ -77,11 +77,11 @@ const back=()=>history.length>1&&nav>0?history.back():go({n:'page'});
 const svg=p=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const I={s:svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),b:svg('<path d="M15 5l-7 7 7 7"/>'),e:svg('<path d="M4 20l1-4L16 5l3 3L8 19z"/>'),p:svg('<path d="M12 5v14M5 12h14"/>')};
 /* ---- markdown (small, safe subset: everything is escaped first) ---- */
-const mdi=s=>{const st=[],k=h=>'\u0000'+(st.push(h)-1)+'\u0000';
+const mdi=(s,plain)=>{const st=[],k=h=>'\u0000'+(st.push(h)-1)+'\u0000',A=(u,t)=>k(plain?`<span class="mdl">${t}</span>`:`<a class="mdl" href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>`);
 let h=esc(String(s??'').replace(/\u0000/g,''))
 .replace(/`([^`\n]+)`/g,(_,c)=>k('<code>'+c+'</code>'))
-.replace(/\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,(_,t,u)=>k(`<a class="mdl" href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>`))
-.replace(/(^|[\s(])(https?:\/\/[^\s<]*[^\s<.,;:!?)\]'])/g,(_,p,u)=>p+k(`<a class="mdl" href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`))
+.replace(/\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,(_,t,u)=>A(u,t))
+.replace(/(^|[\s(])(https?:\/\/[^\s<]*[^\s<.,;:!?)\]'])/g,(_,p,u)=>p+A(u,u))
 .replace(/\*\*(\S(?:[\s\S]*?\S)?)\*\*/g,'<strong>$1</strong>').replace(/(^|\W)__(\S(?:[\s\S]*?\S)?)__(?!\w)/g,'$1<strong>$2</strong>')
 .replace(/\*(\S(?:[^*]*?\S)?)\*/g,'<em>$1</em>').replace(/(^|\W)_(\S(?:[^_]*?\S)?)_(?!\w)/g,'$1<em>$2</em>')
 .replace(/~~(\S(?:[\s\S]*?\S)?)~~/g,'<del>$1</del>');
@@ -99,6 +99,9 @@ while(i<L.length&&(m=L[i].match(LI))&&/\d/.test(m[1])==ol){it.push(m[2]);i++;whi
 const lis=it.map(x=>'<li>'+mdi(x).replace(/\n/g,'<br>')+'</li>').join('');o.push(ol?`<ol${start>1?` start="${start}"`:''}>${lis}</ol>`:`<ul>${lis}</ul>`);continue}
 const b=[l];i++;while(i<L.length&&L[i].trim()&&!BLK.test(L[i])&&!HR.test(L[i]))b.push(L[i++]);o.push('<p>'+mdi(b.join('\n')).replace(/\n/g,'<br>')+'</p>')}
 return o.join('')};
+const mdRow=(s,t)=>{let h=mdi(String(s??'').split('\n').filter(l=>!/^```/.test(l)).map(l=>l.replace(/^#{1,6}\s+/,'').replace(/^>\s?/,'').replace(/^\s*[-*+]\s+/,'• ').replace(/^\s*([-*_])(\s*\1){2,}\s*$/,'')).join('\n').replace(/\n{3,}/g,'\n\n').trim(),1);
+if(!t||!t.length)return h;const re=new RegExp('('+t.map(x=>esc(x).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');
+return h.split(/(<[^>]+>|&\w+;)/).map(p=>/^(<|&\w+;$)/.test(p)?p:p.replace(re,'<mark>$1</mark>')).join('')};
 const hl=(s,t)=>{if(!t||!t.length)return esc(s);const re=new RegExp('('+t.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gi');return String(s).split(re).map((p,i)=>i%2?'<mark>'+esc(p)+'</mark>':esc(p)).join('')};
 /* notes in the Zettelkasten (same site) that cite each entry, read-only */
 let CITED={};
@@ -109,7 +112,7 @@ const loadCited=async()=>{CITED=await zread()};
 const citeLinks=(e,max)=>{const c=CITED[e.id]||[];return c.slice(0,max).map(n=>`<a href="notes/#note-${n.id}" class="cl">${esc(n.title)}</a>`).join('')+(c.length>max?`<span class="mut">+${c.length-max} more</span>`:'')};
 const refreshView=()=>{const x=document.activeElement;if(S.v.n=='form'||S.v.n=='search'||S.v.n=='settings'||document.querySelector('input[type=file]')||(x&&/^(INPUT|TEXTAREA|SELECT)$/.test(x.tagName)))return;render()};
 const refCol=(e,t)=>`<aside class="ref">${e.tags[0]?`<span class="tag">${hl(tname(e.tags[0]),t)}</span>`:''}${e.author?`<span>${hl(e.author,t)}</span>`:''}${e.source?`<span class="mut" style="font-style:italic">${hl(e.source,t)}</span>`:''}<span class="mut">${esc(fdate(e.date))}</span>${e.see[0]?`<button class="lnk" data-a="page" data-n="${e.see[0]}">see p. ${e.see[0]} →</button>`:''}${CITED[e.id]?`<div class="cites"><span class="mut">Cited in</span>${citeLinks(e,3)}</div>`:''}</aside>`;
-const row=(e,t)=>`<article class="row"><div><a href="#" class="q" data-a="entry" data-id="${e.id}">“${hl(e.quote,t)}”</a>${e.note?`<div class="note">→ ${hl(e.note,t)}</div>`:''}</div>${refCol(e,t)}</article>`;
+const row=(e,t)=>`<article class="row"><div><a href="#" class="q" data-a="entry" data-id="${e.id}">“${mdRow(e.quote,t)}”</a>${e.note?`<div class="note">→ ${mdRow(e.note,t)}</div>`:''}</div>${refCol(e,t)}</article>`;
 const rail=()=>`<nav class="rail" aria-label="Notebook"><div class="serif" style="font-size:24px">Commonplace</div><div><a href="#" class="rl" data-a="page" data-n="${lastPage()}">Pages</a><a href="#" class="rl" data-a="index" data-k="tags">Index</a><a href="#" class="rl" data-a="settings">Settings</a><a href="notes/" class="rl">Notebook ↗</a></div><div><div class="lbl" style="margin-bottom:8px">Tags</div>${groups('tags').map(g=>`<a href="#" class="rl" data-a="list" data-k="tags" data-key="${esc(g.k)}"><span>${esc(g.n)}</span><span class="mut">${pgs(g)}</span></a>`).join('')||'<span class="mut">None yet</span>'}</div><div class="mut" style="margin-top:auto;font-size:12px">${S.entries.length} entries · ${pages().length} pages</div></nav>`;
 const bar=()=>{const n=S.v.n;return`<nav class="bar" aria-label="Main"><button data-a="page" data-n="${lastPage()}" class="${n=='page'?'on':''}">Pages</button><button data-a="index" data-k="tags" class="${n=='index'||n=='list'?'on':''}">Index</button><button data-a="settings" class="${n=='settings'?'on':''}">Settings</button></nav>`};
 const topbar=t=>`<header class="top"><div class="serif">${t}</div><button class="ic" data-a="search" aria-label="Search entries">${I.s}</button><button class="btn" data-a="new" style="display:none" id="nb">New entry</button></header>`;
@@ -125,7 +128,7 @@ ${E.length?E.map(e=>row(e)).join(''):`<div class="empty"><p class="serif" style=
 entry(){const e=S.entries.find(x=>x.id==S.v.id);if(!e)return V.page();const P=sorted().filter(x=>x.page==e.page),i=P.indexOf(e);
 const r=(l,v)=>v?`<div><dt>${l}</dt><dd>${v}</dd></div>`:'',url=/^https?:\/\/\S+$/.test(e.locator);
 const by=[e.author&&`<a href="#" class="ent-au" data-a="list" data-k="authors" data-key="${esc(e.author)}">${esc(e.author)}</a>`,e.source&&`<a href="#" data-a="list" data-k="sources" data-key="${esc(e.source)}"><cite>${esc(e.source)}</cite></a>`,e.locator&&!url&&`<span class="mut">${esc(e.locator)}</span>`].filter(Boolean).join(', ');
-return shell(`<header class="top"><button class="lnk big" data-a="page" data-n="${e.page}" style="display:flex;align-items:center;gap:6px;color:var(--ink)">${I.b}p. ${e.page}${topic(e.page)?`<span class="mut" style="margin-left:4px">· ${esc(topic(e.page))}</span>`:''}</button><span style="flex:1"></span><button class="ic" data-a="edit" data-id="${e.id}" aria-label="Edit entry">${I.e}</button></header>
+return shell(`<header class="top"><button class="crumb" data-a="page" data-n="${e.page}" aria-label="Back to page ${e.page}">${I.b}<span class="crumb-p">p. ${e.page}</span>${topic(e.page)?`<span class="crumb-t">${esc(topic(e.page))}</span>`:''}</button><button class="ic" data-a="edit" data-id="${e.id}" aria-label="Edit entry">${I.e}</button></header>
 <article class="ent">
 <div class="ent-eye">${e.tags.map(t=>`<a href="#" class="ent-tag" data-a="list" data-k="tags" data-key="${esc(t)}">${esc(tname(t))}</a>`).join('')}<span class="lbl">${esc(fdate(e.date))}</span></div>
 <blockquote class="ent-q md">${md(e.quote)}</blockquote>
