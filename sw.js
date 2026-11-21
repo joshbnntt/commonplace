@@ -1,7 +1,7 @@
 /* Commonplace service worker (scope: /).
    The notebook lives at /notes/ with its own worker, so this one ignores /notes/ entirely.
    Bump VERSION when you add, rename, or remove files. */
-const VERSION = 'cp-5';
+const VERSION = 'cp-7';
 const SHELL = [
   './', 'index.html', 'style.css', 'app.js', 'fflate.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
